@@ -1,0 +1,11 @@
+ID,START_DATETIME,END_DATETIME,ROOM,MAIL,INFO,ANYONE_DELETABLE,EXTRA
+1,2018-04-04 12:00:00,2018-04-04 13:00:00,ROOM1,tak@mail.com,,true,
+2,2018-04-05 13:00:00,2018-04-05 13:30:00,ROOM1,tak@mail.com,,true,
+3,2018-04-06 13:00:00,2018-04-06 13:30:00,ROOM1,tak@mail.com,,,
+4,2018-04-06 13:31:00,2018-04-06 13:32:00,ROOM1,tak@mail.com,,true,
+5,2018-04-07 14:00:00,2018-04-07 14:45:00,ROOM2,tak@mail.com,,true,
+6,2018-04-07 14:00:00,2018-04-07 14:45:00,ROOM3,nik@mail.com,,,
+7,2018-04-08 14:00:00,2018-04-08 14:45:00,ROOM3,nik@mail.com,,true,
+8,2018-04-09 14:00:00,2018-04-09 14:45:00,ROOM3,nik@mail.com,"The asynchronous form always takes a completion callback as its last argument. The arguments passed to the completion callback depend on the method, but the first argument is always reserved for an exception. If the operation was completed successfully, then the first ",true,
+1523169076571,2018-04-08T06:30:00.000Z,2018-04-08T07:30:00.000Z,"ROOM2","tak@mail.com","",false,
+1523169494641,2018-04-08T06:30:00.000Z,2018-04-08T07:30:00.000Z,"ROOM3","tak@mail.com","",false,

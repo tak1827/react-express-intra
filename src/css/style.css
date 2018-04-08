@@ -1,0 +1,202 @@
+/* Custom Stylesheet */
+/**
+ * Use this file to override Materialize files
+ * And define your own style
+ * 
+ * We are following this style guide
+ * https://google.github.io/styleguide/htmlcssguide.html
+ *
+ * Validate required
+ * https://jigsaw.w3.org/css-validator/
+ */
+
+
+/* 
+  Common
+ */
+input.valid:not([type]),
+input.valid:not([type]):focus,
+input:not(.browser-default):focus:not([readonly]),
+input[type=text].valid:not(.browser-default),
+input[type=text].valid:not(.browser-default):focus,
+input[type=text]:not(.browser-default):focus:not([readonly]),
+input[type=date].valid:not(.browser-default),
+input[type=date].valid:not(.browser-default):focus,
+input[type=date]:not(.browser-default):focus:not([readonly]),
+input[type=time].valid:not(.browser-default),
+input[type=time].valid:not(.browser-default):focus,
+input[type=time]:not(.browser-default):focus:not([readonly]),
+input[type=password].valid:not(.browser-default),
+input[type=password].valid:not(.browser-default):focus,
+input[type=password]:not(.browser-default):focus:not([readonly]),
+input[type=email].valid:not(.browser-default),
+input[type=email].valid:not(.browser-default):focus, 
+input[type=email]:not(.browser-default):focus:not([readonly]),
+textarea.valid:not([type]),
+textarea.valid:not([type]):focus,
+textarea:not(.browser-default):focus:not([readonly]) {
+  border-bottom: 1px solid #3f51b5;
+  -webkit-box-shadow: 0 1px 0 0 #3f51b5;
+  box-shadow: 0 1px 0 0 #3f51b5;
+}
+
+input:not([type]).validate:focus + label,
+input[type=text]:not(.browser-default).validate:focus + label,
+input[type=text]:not(.browser-default):focus:not([readonly])+ label,
+input[type=date]:not(.browser-default).validate:focus + label,
+input[type=date]:not(.browser-default):focus:not([readonly])+ label,
+input[type=time]:not(.browser-default).validate:focus + label,
+input[type=time]:not(.browser-default):focus:not([readonly])+ label,
+input[type=password]:not(.browser-default).validate:focus + label,
+input[type=password]:not(.browser-default):focus:not([readonly])+ label,
+input[type=email]:not(.browser-default).validate:focus + label,
+input[type=email]:not(.browser-default):focus:not([readonly])+ label,
+.input-field textarea.materialize-textarea:focus + label {
+  color: #3f51b5;
+}
+
+[type="checkbox"].filled-in:checked+span:not(.lever):after {
+  border: 2px solid #3f51b5;
+  background-color: #3f51b5;
+}
+
+.dropdown-content li > a, 
+.dropdown-content li > span {
+  color: #3f51b5;
+}
+
+.select-wrapper input.select-dropdown:focus {
+  border-bottom: 1px solid #3f51b5;
+}
+
+.datepicker-date-display,
+.timepicker-digital-display {
+  background-color: #3f51b5;
+}
+
+.input-field .prefix.active {
+  color: #3f51b5;
+}
+
+.toast { background-color: #fff; }
+.toast .success { color: #26a69a; }
+.toast .fail { color: #f44336; }
+.toast .info { color: #000; }
+.toast .warning { color: #ffab00; }
+
+
+/* 
+  Login screen
+ */
+#area-login .inner {
+  border: 1px solid #eee;
+  display: inline-block; 
+  margin-top: 100px;
+  opacity: 0.9;
+  padding: 32px 48px 0px 48px;
+}
+
+#area-login video {
+  bottom: 0;
+  min-height: 100%;
+  position: fixed;
+  right: 0;
+  width: 100%; 
+  z-index: -1;
+}
+
+
+/* 
+  Intra screen
+ */
+#screen-intra header, 
+#screen-intra main, 
+#screen-intra footer {
+  padding-left: 300px;
+}
+
+#screen-intra nav.top-nav {
+  background-color: transparent;
+  box-shadow: none;
+  border-bottom: 1px solid rgba(0,0,0,0.14);
+  height: 110px;
+  -webkit-box-shadow: none;
+}
+
+#screen-intra nav h1 {
+  font-weight: 300;
+  margin: 0;
+  padding-top: 26px;
+}
+
+#screen-intra .user-view .background img {
+  width: 100%;
+}
+
+#screen-intra .sidenav-trigger.top-nav {
+    position: absolute;
+    text-align: center;
+    height: 48px;
+    width: 48px;
+    left: 7.5%;
+    top: 55px;
+    float: none;
+    margin-left: 1.5rem;
+    font-size: 36px;
+    z-index: 2;
+}
+
+#screen-intra .card {
+  margin: 20px 3px 0 20px;
+}
+
+#screen-intra .card-image {
+  max-height: 100px;
+  overflow-y: hidden;
+}
+
+#screen-intra .btn-floating.halfway-fab {
+  top: 80px;
+}
+
+#screen-intra .input-field.inline {
+  margin-left: 15px;
+}
+
+#screen-intra .modal {
+  max-height: 90%;
+}
+
+#screen-intra .datepicker-modal {
+  min-width: 500px;
+}
+
+#area-news .collection,
+#area-links .collapsible {
+  border: none;
+}
+
+#area-news .date,
+#area-links .date {
+  margin-top: 5px;
+}
+
+#area-links .collapsible-body p {
+  padding-bottom: 1em;
+}
+
+#area-links .collapsible-header:hover { 
+  background-color: rgba(50,50,50,0.06);
+}
+
+@media screen and (max-width: 992px) {
+  #screen-intra header,
+  #screen-intra main,
+  #screen-intra footer {
+    padding-left: 0;
+  }
+  #screen-intra nav h1 {
+    text-align: center;
+  }
+}
+
