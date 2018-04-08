@@ -10,7 +10,7 @@ const rfs = require('rotating-file-stream'); // Access log rotate
 const Service = require('./server-service');
 
 const app = express();
-const PORT = config.app.port || 3000;
+const PORT = process.env.NODE_ENV=='production' ? config.app.prodPort : config.app.devPort;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -171,7 +171,7 @@ app.use(function (err, req, res, next) {
 
 
 app.listen(PORT, () => {
-  debug('Example app listening on port ' + PORT);
+  console.log('Server listening on port ' + PORT);
 });
 
 // app.get('/login/:mail--:pass', async (req, res) => {

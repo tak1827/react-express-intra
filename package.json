@@ -8,7 +8,7 @@
     "build": "webpack --mode=development",
     "start": "concurrently \"npm run build\" \"npm run server\"",
     "server:prod": "NODE_ENV=production nodemon server.js",
-    "build:prod": "webpack --mode=production"
+    "build:prod": "NODE_ENV=production webpack --mode=production"
   },
   "author": "tamura.takayuki@persol.co.jp",
   "license": "",
