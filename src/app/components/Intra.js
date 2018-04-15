@@ -7,14 +7,25 @@ import News from './News.js';
 import Links from './Links.js';
 import Meetings from './Meetings.js';
 import Footer from './Footer.js';
+import io from 'socket.io-client';
 
 class Intra extends React.Component {
-
+  constructor(props) {
+    super(props);
+    this.WS = io.connect(window.location.origin + '/ws');
+  }
+  
   componentDidMount () {
+    /* For define functions as global & For Exectute function when page loaded */
     const script = document.createElement("script");
     script.src = "js/scripts.js";
     script.async = false;
     document.body.appendChild(script);
+
+    // Connect to websocket
+    this.WS.on('connect', function () {
+      console.log("WS connected!");
+    });
   }
 
   render() {
@@ -24,9 +35,9 @@ class Intra extends React.Component {
         <Sidebar/>
         <main>
           <div className="row">
-            <News/>
-            <Links/>
-            <Meetings/>
+            <News WS={this.WS}/>
+            <Links WS={this.WS}/>
+            <Meetings WS={this.WS}/>
           </div>
         </main>
         <Footer/>

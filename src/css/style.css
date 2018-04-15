@@ -65,6 +65,15 @@ input[type=email]:not(.browser-default):focus:not([readonly])+ label,
   color: #3f51b5;
 }
 
+.dropdown-content {
+  padding-top: 10px;
+}
+
+.dropdown-content .btn-flat {
+  margin-top: 8px;
+  color: #3f51b5;
+}
+
 .select-wrapper input.select-dropdown:focus {
   border-bottom: 1px solid #3f51b5;
 }
@@ -171,7 +180,7 @@ input[type=email]:not(.browser-default):focus:not([readonly])+ label,
   min-width: 500px;
 }
 
-#area-news .collection,
+#area-news .collapsible,
 #area-links .collapsible {
   border: none;
 }
@@ -181,12 +190,24 @@ input[type=email]:not(.browser-default):focus:not([readonly])+ label,
   margin-top: 5px;
 }
 
+#area-news .collapsible-header i {
+  margin-right:0;
+}
+
 #area-links .collapsible-body p {
   padding-bottom: 1em;
 }
 
 #area-links .collapsible-header:hover { 
   background-color: rgba(50,50,50,0.06);
+}
+
+#area-links .collapsible-body {
+  padding: 1em;
+}
+
+#area-links .collapsible-body a {
+  margin-bottom: 5px;
 }
 
 @media screen and (max-width: 992px) {

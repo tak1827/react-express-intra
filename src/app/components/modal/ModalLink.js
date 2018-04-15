@@ -29,44 +29,34 @@ class ModalLink extends React.Component {
   }
 
   handleSubmit(e) {
-    const category = document.querySelector('[name="category"]').value;
-    const name = document.querySelector('[name="name"]').value;
-    const p = document.querySelector('[name="path"]').value;
+    const d = document;
+    const id = d.querySelector('#modal-link [type="submit"]').value;
+    const category = d.querySelector('[name="category"]').value;
+    const name = d.querySelector('[name="name"]').value;
+    const p = d.querySelector('[name="path"]').value;
+    const method = id == "" ? "post" : "put";
+    const body = {ID: id, CATEGORY: category, NAME: name, PATH: p};
     const url = '/api/link';
-    fetch(url, {
-      method: 'post',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({category: category, name: name, path: p})
-    }).then((response) => {
-      if (response.status >= 200 && response.status < 300) {
-        return response.json();
-      } else {
-        throw new Error(response.statusText || response.status);
-      }
-    }).then((data) => {
-      console.log(data);
+    console.log(e.target);
+    U.fetchPostPut(method, url, body).then((data) => {
       M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
-    }).catch((error) => {
-      console.error(error);
-      M.toast({html: U.createToastHtml("Failed! Server error occour.", "fail"), displayLength: 2000});
     });
     e.preventDefault();
   }
 
   render() {
-    const listItems = this.props.links.map((item, i) =>
-      <option key={i} value={item.category}>{item.category}</option>
-    );
     return (
 	  	<div id="modal-link" className="modal">
         <div className="modal-content">
-          <h4>Create Link</h4>
+          <h4>Link</h4>
           <form className="col s12" onSubmit={this.handleSubmit}>
             <div className="row">
               <div className="input-field col s6">
                 <select defaultValue="" name="categories" onChange={this.handleChange}>
-                  <option value=""></option>
-                  {listItems}
+                  <option value=""></option>                  
+                  {this.props.links.map((item, i) =>
+                    <option key={i} value={item.category}>{item.category}</option>
+                  )}
                 </select>
                 <label>Category</label>
               </div>
@@ -88,7 +78,7 @@ class ModalLink extends React.Component {
             <br/>
             <div className="row right-align">
               <button type="button" className="modal-action modal-close btn-flat">Cancel</button>
-              <button type="submit" className={this.state.creatBtnCls}>Create</button>
+              <button type="submit" className={this.state.creatBtnCls}>Submit</button>
             </div>
           </form>
         </div>

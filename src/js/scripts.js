@@ -1,10 +1,5 @@
 (function() {
-	// Initialize css flamework javascript
-  M.Sidenav.init(document.querySelectorAll('.sidenav'));
-  M.FormSelect.init(document.querySelectorAll('select'));
-  M.Modal.init(document.querySelectorAll('.modal'));
-  M.Datepicker.init(document.querySelectorAll('.datepicker'));
-  // M.Timepicker.init(document.querySelectorAll('.timepicker'));
+	M.AutoInit();// Initialize css flamework javascript
 })();
 
 // Close toast
@@ -13,3 +8,5 @@ function closeTost(elmnt) {
   M.Toast.getInstance(thisTost).dismiss();
   // thisTost.parentElement.removeChild(thisTost)
 }
+
+

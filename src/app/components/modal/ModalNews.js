@@ -22,27 +22,21 @@ class ModalNews extends React.Component {
   }
 
   handleSubmit(e) {
-    const title = document.querySelector('[name="title"]').value;
-    const contents = document.querySelector('[name="contents"]').value;
-    const important = document.querySelector('[name="important"]').checked;
+    const d = document;
+    const id = d.querySelector('#modal-news [type="submit"]').value;
+    const date = d.querySelector('#modal-news [name="date"]').value;
+    const title = d.querySelector('#modal-news [name="title"]').value;
+    const content = d.querySelector('#modal-news [name="content"]').value;
+    const important = d.querySelector('#modal-news [name="important"]').checked ? "true" : "false";
+    const method = id == "" ? "post" : "put";
+    const body = {ID: id, DATE: date, IMPORTANT: important, TITLE: title, CONTENT: content };
     const url = '/api/news';
-    fetch(url, {
-      method: 'post',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({title: title, contents: contents, important: important})
-    }).then((response) => {
-      if (response.status >= 200 && response.status < 300) {
-        return response.json();
-      } else {
-        throw new Error(response.statusText || response.status);
-      }
-    }).then((data) => {
-      console.log(data);
+    U.fetchPostPut(method, url, body).then((data) => {
       M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
-    }).catch((error) => {
-      console.error(error);
-      M.toast({html: U.createToastHtml("Failed! Server error occour.", "fail"), displayLength: 2000});
     });
+    // U.fetchPost(url, body).then((data) => {
+    //   M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
+    // });
     e.preventDefault();
   }
 
@@ -50,7 +44,7 @@ class ModalNews extends React.Component {
     return (
 	  	<div id="modal-news" className="modal">
         <div className="modal-content">
-          <h4>Create News</h4>
+          <h4>News</h4>
           <form className="col s12" onSubmit={this.handleSubmit}>
             <div className="row">
               <div className="input-field col s12">
@@ -59,8 +53,8 @@ class ModalNews extends React.Component {
                 <span className="helper-text" data-error="Empty" data-success="">Required</span>
               </div>
               <div className="input-field col s12">
-                <textarea className="materialize-textarea" name="contents"></textarea>
-                <label htmlFor="contents">Enter Contents</label>
+                <textarea className="materialize-textarea" name="content"></textarea>
+                <label htmlFor="content">Enter Contents</label>
               </div>
               <div className="input-field col s12">
                 <p>
@@ -72,9 +66,10 @@ class ModalNews extends React.Component {
               </div>
             </div>
             <br/>
+            <input type="hidden" className="filled-in" name="date"/>
             <div className="row right-align">
               <button type="button" className="modal-action modal-close btn-flat">Cancel</button>
-              <button type="submit" className={this.state.creatBtnCls}>Create</button>
+              <button type="submit" className={this.state.creatBtnCls}>Submit</button>
             </div>
           </form>
         </div>

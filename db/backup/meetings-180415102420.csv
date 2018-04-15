@@ -8,3 +8,4 @@
 "8","2018-04-09 14:00:00","2018-04-09 14:45:00","ROOM3","nik@mail.com","The asynchronous form always takes a completion callback as its last argument. The arguments passed to the completion callback depend on the method, but the first argument is always reserved for an exception. If the operation was completed successfully, then the first ","true",""
 "1523169494641","2018-04-28T06:30:00.000Z","2018-04-28T07:30:00.000Z","ROOM3","tak@mail.com","","false",""
 "1523786756427","2018-04-15T10:05:00.000Z","2018-04-15T11:05:00.000Z","ROOM3","tak@mail.com","ddd eee fffff gggg hhhh iiiii","false","undefined"
+"1523787855581","2018-04-15T10:24:00.000Z","2018-04-15T11:24:00.000Z","ROOM1","tak@mail.com","delete","false"

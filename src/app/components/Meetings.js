@@ -1,6 +1,7 @@
 import React from 'react';
 import DateFormat from 'dateformat';
 import ModalMeeting from './modal/ModalMeeting.js';
+import U from './../util.js';
 
 const lsKey = 'usr';
 
@@ -17,51 +18,65 @@ class Meetings extends React.Component {
     this.fileterMeeting = this.fileterMeeting.bind(this);
     this.handlePeriodFiler = this.handlePeriodFiler.bind(this);
     this.handleRoomFiler = this.handleRoomFiler.bind(this);
-    this.handleClick = this.handleClick.bind(this);
+    this.format = this.format.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
+    this.handleModalClick = this.handleModalClick.bind(this);
   }
 
   componentDidMount () {
     // Get all meetings
     const url = '/api/meetings';
-    fetch(url, {
-      method: 'get'
-      // body: JSON.stringify(opts)
-    }).then((response) => {
-      if (response.status >= 200 && response.status < 300) {
-        return response.json();
-      } else {
-        throw new Error(response.statusText || response.status);
-      }
-    }).then((data) => {
-      console.log(data);
+    U.fetchGet(url).then((data) => {
+      let meetings = [];  
       let rooms = [];
-      data.meetings.filter((item, i) => {
-        if (rooms.includes(item.room)) {
-          return false
-        }
-        rooms.push(item.room);
-        return true;
+      data.meetings.forEach((m) => {        
+        if (!rooms.includes(m.ROOM)) { rooms.push(m.ROOM); }
+        meetings.push(this.format(m));
       });
       this.setState({rooms: rooms});
-      this.setState({meetings: data.meetings});
-      this.setState({filteredMeetings: data.meetings});// Initialize
-    }).catch((error) => {
-      console.error(error);
+      this.setState({meetings: meetings});
+      this.setState({filteredMeetings: meetings});// Initialize
+    });
+
+    // Receive update through websocket
+    this.props.WS.on('meetings', (data) => {
+      if (!data) { return; }
+      console.log(data);
+      let meetings = this.state.meetings;
+      if (data.type == 'new') {
+        meetings.push(this.format(data.meeting));
+      } else if (data.type == 'delete') {
+        meetings = meetings.filter((m) => { return m.ID == data.id ? false : true });
+      } else if (data.type == 'update') {
+        data.meeting = this.format(data.meeting);
+        meetings = meetings.map((m) => { return m.ID == data.meeting.ID ? data.meeting : m });
+      }
+      meetings.sort((a, b) => {
+        if (a.START_DT < b.START_DT) return -1;
+        if (a.START_DT > b.START_DT) return 1;
+        return 0;
+      });
+      console.log(meetings)
+      this.setState({meetings: meetings});
+      this.setState({
+        filteredMeetings: this.fileterMeeting(this.state.periodFilter, this.state.roomFilter)
+      });
+      M.AutoInit();
     });
   }
 
   fileterMeeting(period, room) {
-    return this.state.meetings.filter((meeting) => {
+    return this.state.meetings.filter((m) => {
       let now = new Date();
       let to = new Date().setDate(now.getDate()+Number(period));
-      let start = new Date(meeting["start"]);
+      let end = new Date(m["END_DT"]);
       if (period == "all" && room == "all") {
         return true;
-      } else if (period == "all" && room == meeting["room"]) {
+      } else if (period == "all" && room == m["ROOM"]) {
         return true;
-      } else if (now < start && start < to && room == "all") {
+      } else if (now < end && end < to && room == "all") {
         return true;
-      } else if (now < start && start < to && room == meeting["room"]) {
+      } else if (now < end && end < to && room == m["ROOM"]) {
         return true;
       }
       return false;
@@ -82,17 +97,47 @@ class Meetings extends React.Component {
     });
   }
 
-  handleClick(e) {
+  handleModalClick(e) {
+    const id = e.target.attributes[1].nodeValue;
+    const selected = this.state.meetings.filter((m) => { return m.ID == id ? true : false; });
+    const d = document;
     let now = new Date();
-    document.querySelector('[name="date"]').value = DateFormat(now, "yyyy-mm-dd");
-    document.querySelector('[name="start"]').value = DateFormat(now, "HH:MM");
-    document.querySelector('[name="end"]').value = DateFormat(now.setHours(now.getHours()+1), "HH:MM");
+    d.querySelector('#modal-meeting [name="date"]').value = selected.length == 0 ? DateFormat(now, "yyyy-mm-dd") : DateFormat(selected[0].START_DT, "yyyy-mm-dd");
+    d.querySelector('#modal-meeting [name="start"]').value = selected.length == 0 ? DateFormat(now, "HH:MM") : DateFormat(selected[0].START_DT, "HH:MM");
+    d.querySelector('#modal-meeting [name="end"]').value = selected.length == 0 ? DateFormat(now.setHours(now.getHours()+1), "HH:MM") : DateFormat(selected[0].END_DT, "HH:MM");
+    d.querySelector('#modal-meeting [name="room"]').value = selected.length == 0 ? "" : selected[0].ROOM;
+    d.querySelector('#modal-meeting [name="info"]').value = selected.length == 0 ? "" : selected[0].INFO;
+    d.querySelector('#modal-meeting [name="any"]').checked = selected.length == 0 ? false : selected[0].any;
+    d.querySelector('#modal-meeting [type="submit"]').value = selected.length == 0 ? "" : id;
+  }
+
+  handleDelete(e) {
+    const url = '/api/meeting/' + e.target.value;
+    U.fetchDelete(url).then((data) => {
+      M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
+    });
+  }
+
+  format(m) {
+    let start = new Date(m.START_DT);
+    let end = new Date(m.END_DT);
+    m.date = DateFormat(start, "mm/dd");
+    m.period = DateFormat(start, "HH:MM") + "-" + DateFormat(end, "HH:MM");
+    m.person = m.MAIL.substring(0,m.MAIL.indexOf("@")); 
+    if (m.ANY == 'true') { 
+      m.any = true;
+      m.disabledCls = false;
+    } else if (localStorage.getItem(lsKey) && m.MAIL == localStorage.getItem(lsKey)) {
+      m.any = false;
+      m.disabledCls = false;
+    } else {
+      m.any = false;
+      m.disabledCls = true;
+    }
+    return m;
   }
 
   render() {
-    const listItems = this.state.rooms.map((item, i) =>
-      <option key={i} value={item}>{item}</option>
-    );
     return (
     	<div id="area-meetings"  className="col s12 m12">
         <div className="card">
@@ -100,7 +145,7 @@ class Meetings extends React.Component {
             <img src="images/meeting.png"/>
             <span className="card-title">Meeting Room Booking</span>
           </div>
-          <a className="btn-floating halfway-fab waves-effect waves-light indigo modal-trigger" href="#modal-meeting"><i className="material-icons" onClick={this.handleClick}>add</i></a>
+          <button onClick={this.handleModalClick} className="btn-floating halfway-fab waves-effect waves-light indigo modal-trigger" href="#modal-meeting"><i className="material-icons" value="new">add</i></button>
           <div className="card-content">
             <div className="row">
 
@@ -120,7 +165,9 @@ class Meetings extends React.Component {
                 <div className="input-field col s12">
                   <select defaultValue={this.state.roomFilter} onChange={this.handleRoomFiler}>
                     <option value="all">All</option>
-                    {listItems}
+                      {this.state.rooms.map((item, i) =>
+                        <option key={i} value={item}>{item}</option>
+                      )}
                   </select>
                   <label>Room</label>
                 </div>
@@ -135,10 +182,39 @@ class Meetings extends React.Component {
                       <th>Room</th>
                       <th>Preson</th>
                       <th>Info</th>
+                      <th width="50px">Edit</th>
                       <th width="50px">Delete</th>
                     </tr>
                   </thead>
-                  <MeetingsList meetings={this.state.filteredMeetings} />
+                  <tbody>
+                    {this.state.filteredMeetings.map((m) =>
+                      <tr key={m.START_DT + "-" + m.ROOM}>
+                        <td>{m.date}</td>
+                        <td>{m.period}</td>
+                        <td>{m.ROOM}</td>
+                        <td>{m.person}</td>
+                        <td>{m.INFO}</td>
+                        <td className="center-align">
+                          <button onClick={this.handleModalClick} className={m.disabledCls==true ? "btn-floating btn-small grey disabled" : "modal-trigger btn-floating btn-small grey"}  href="#modal-meeting">
+                            <i className="material-icons" value={m.ID}>edit</i>
+                          </button>
+                        </td>
+                        <td className="center-align">
+                          <button className={m.disabledCls==true ? "btn-floating btn-small grey disabled" : "dropdown-trigger btn-floating btn-small grey"} data-target={"m-delete-" + m.ID}>
+                            <i className="material-icons">delete</i>
+                          </button>
+                          <div id={"m-delete-" + m.ID} className='dropdown-content'>
+                            <p className="center-align">Really?</p>
+                            <ul>
+                              <li><a>No</a></li>
+                              <li><button value={m.ID} className="btn-flat" onClick={this.handleDelete}>Yes</button></li>
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  
                 </table>
               </div>
               
@@ -149,39 +225,6 @@ class Meetings extends React.Component {
       </div>
     );
   }
-}
-
-function MeetingsList(props) {
-  let meetingsFormed = [];
-  props.meetings.forEach((eachMeetings) => {
-    let start = new Date(eachMeetings.start);
-    let end = new Date(eachMeetings.end);
-    eachMeetings.date = DateFormat(start, "mm/dd");
-    eachMeetings.period = DateFormat(start, "HH:MM") + "-" + DateFormat(end, "HH:MM");
-    eachMeetings.person = eachMeetings.mail.substring(0,eachMeetings.mail.indexOf("@"));
-    let devDeleteIcon = <a className="btn-floating btn-small waves-effect waves-light grey z-depth-0"><i className="material-icons">delete</i></a>;
-    if (eachMeetings.any == 'true') { 
-      eachMeetings.disabled = devDeleteIcon;
-    } else if (localStorage.getItem(lsKey) && eachMeetings.mail == localStorage.getItem(lsKey)) {
-      eachMeetings.disabled = devDeleteIcon;
-    } else {
-      eachMeetings.disabled = "";
-    }
-    meetingsFormed.push(eachMeetings);
-  });
-  const listItems = meetingsFormed.map((eachMeetings) =>
-    <tr key={eachMeetings.start + "-" + eachMeetings.room}>
-      <td>{eachMeetings.date}</td>
-      <td>{eachMeetings.period}</td>
-      <td>{eachMeetings.room}</td>
-      <td>{eachMeetings.person}</td>
-      <td>{eachMeetings.info}</td>
-      <td className="center-align">{eachMeetings.disabled}</td>
-    </tr>
-  );
-  return (
-    <tbody>{listItems}</tbody>
-  );
 }
 
 export default Meetings;

@@ -1,4 +1,5 @@
-var config = {};
+const path = require('path');
+const config = {};
 
 config.app={};
 config.app.name="intranet-test";
@@ -14,10 +15,13 @@ config.admin.name="tak";
 config.admin.email="tamura.takayuki@persol.co.jp";
 
 config.env={};
-config.env.csvUsrs="./db/users.csv";
-config.env.csvNews="./db/news.csv";
-config.env.csvLinks="./db/links.csv";
-config.env.csvMeetings="./db/meetings.csv";
-
+config.env.csvUsrs=       path.resolve(__dirname, "./db/users.csv");
+config.env.csvUsrsBk=     path.resolve(__dirname, "./db/backup/users");
+config.env.csvNews=       path.resolve(__dirname, "./db/news.csv");
+config.env.csvNewsBk=     path.resolve(__dirname, "./db/backup/news");
+config.env.csvLinks=      path.resolve(__dirname, "./db/links.csv");
+config.env.csvLinksBk=    path.resolve(__dirname, "./db/backup/links");
+config.env.csvMeetings=   path.resolve(__dirname, "./db/meetings.csv");
+config.env.csvMeetingsBk= path.resolve(__dirname, "./db/backup/meetings");
 
 module.exports=config

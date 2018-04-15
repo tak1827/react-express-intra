@@ -7,10 +7,9 @@ class Login extends React.Component {
     this.state = {
       usr: {
         mail:'',
-        pass: ''
-      },
-      mailValCls: "validate",
-      passValCls: "validate"
+        pass: '',
+        isUsr: ''
+      }
     }
     this.handleMailChange = this.handleMailChange.bind(this);
     this.handlePassChange = this.handlePassChange.bind(this);
@@ -21,12 +20,8 @@ class Login extends React.Component {
     let usr = this.state.usr;
     if (query.mail) { usr.mail = query.mail; } 
     if (query.pass) { usr.pass = query.pass; }
+    if (query.isUsr) { usr.isUsr = query.isUsr; }
     this.setState({usr});
-    if (query.isUsr && query.isUsr == 'false') {
-      this.setState({mailValCls: "validate invalid", passValCls: "validate invalid"});
-    } else if (query.isUsr && query.isUsr == 'true') {
-      this.setState({passValCls: "validate invalid"});
-    }
   }
 
   handleMailChange(e) {
@@ -53,7 +48,7 @@ class Login extends React.Component {
                 <div className="row">
                   <div className="input-field col s12">
                     <i className="material-icons prefix">account_circle</i>
-                    <input className={this.state.mailValCls} type="email" name="mail" value={this.state.usr.mail} onChange={this.handleMailChange}/>
+                    <input className={this.state.usr.isUsr == "false" ? "validate invalid" : "validate"} type="email" name="mail" value={this.state.usr.mail} onChange={this.handleMailChange}/>
                     <label htmlFor="email">Enter your email</label>
                     <span className="helper-text" data-error="Invalid" data-success=""></span>
                   </div>
@@ -61,7 +56,7 @@ class Login extends React.Component {
                 <div className="row">
                   <div className="input-field col s12">
                     <i className="material-icons prefix">lock</i>
-                    <input className={this.state.passValCls} type="password" name="pass" value={this.state.usr.pass} onChange={this.handlePassChange}/>
+                    <input className={this.state.usr.isUsr != '' ? "validate invalid" : "validate"} type="password" name="pass" value={this.state.usr.pass} onChange={this.handlePassChange}/>
                     <label htmlFor="password">Enter your password</label>
                     <span className="helper-text" data-error="Invalid" data-success=""></span>
                   </div>
