@@ -14,7 +14,8 @@ const UtilFuncs = {
   fetchGet: function(url) {
     return new Promise(res => {
       fetch(url, {
-        method: 'get'
+        method: 'get',
+        credentials: 'include',
       }).then((response) => {
         if (response.status >= 200 && response.status < 300) {
           return response.json();
@@ -37,6 +38,7 @@ const UtilFuncs = {
     return new Promise(res => {
       fetch(url, {
         method: 'post',
+        credentials: 'include',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       }).then((response) => {
@@ -50,7 +52,7 @@ const UtilFuncs = {
         return res(data);
       }).catch((error) => {
         console.error(error);
-        M.toast({html: this.createToastHtml("Failed! Server error occour.", "fail"), displayLength: 2000});
+        M.toast({html: this.createToastHtml(error, "fail"), displayLength: 2000});
       });
     });
   },
@@ -62,6 +64,7 @@ const UtilFuncs = {
     return new Promise(res => {
       fetch(url, {
         method: 'delete',
+        credentials: 'include',
       }).then((response) => {
         if (response.status >= 200 && response.status < 300) {
           return response.json();
@@ -73,7 +76,7 @@ const UtilFuncs = {
         return res(data);
       }).catch((error) => {
         console.error(error);
-        M.toast({html: U.createToastHtml("Failed! Server error occour.", "fail"), displayLength: 2000});
+        M.toast({html: this.createToastHtml(error, "fail"), displayLength: 2000});
       });
     });
   },
@@ -85,6 +88,7 @@ const UtilFuncs = {
     return new Promise(res => {
       fetch(url, {
         method: 'put',
+        credentials: 'include',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       }).then((response) => {
@@ -98,7 +102,7 @@ const UtilFuncs = {
         return res(data);
       }).catch((error) => {
         console.error(error);
-        M.toast({html: this.createToastHtml("Failed! Server error occour.", "fail"), displayLength: 2000});
+        M.toast({html: this.createToastHtml(error, "fail"), displayLength: 2000});
       });
     });
   },

@@ -1,4 +1,7 @@
-ID,MAIL,PASSWORD
-1,tak@mail.com,password
-2,nik@mail.com,password
-3,ted@mail.com,password
+"ID","MAIL","PASSWORD","INFO","ADMIN","EXTRA"
+"1","tak@mail.com","password","Anything about note","true",""
+"2","nik@mail.com","password","text","","undefined"
+"3","ted@mail.com","password","","","undefined"
+"1524380509040","tafdfds@persol.co.jp","slan7vxe","fdfdfsad","false","undefined"
+"1524380586887","abcd@persol.co.jp","nlsoiwqd","aaaaa","true","undefined"
+"1524380979859","abcdefg@persol.co.jp","password","ffdfasfdfdsfdfdsfdsfdsfsdfdsa  fdfd","false","undefined"

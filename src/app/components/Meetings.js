@@ -3,7 +3,7 @@ import DateFormat from 'dateformat';
 import ModalMeeting from './modal/ModalMeeting.js';
 import U from './../util.js';
 
-const lsKey = 'usr';
+const d = document;
 
 class Meetings extends React.Component {
   constructor(props) {
@@ -11,14 +11,20 @@ class Meetings extends React.Component {
     this.state = {
       meetings: [],
       rooms: [],
-      filteredMeetings: [],
-      periodFilter: "all",
-      roomFilter: "all" 
+      mFiltered: [],
+      fPeriod: "all",
+      fRoom: "all" ,
+      values: {
+        ID: "",
+        date: "",
+        start: "",
+        end: "",
+        INFO: "",
+        ROOM: "",
+      }
     }
-    this.fileterMeeting = this.fileterMeeting.bind(this);
     this.handlePeriodFiler = this.handlePeriodFiler.bind(this);
     this.handleRoomFiler = this.handleRoomFiler.bind(this);
-    this.format = this.format.bind(this);
     this.handleDelete = this.handleDelete.bind(this);
     this.handleModalClick = this.handleModalClick.bind(this);
   }
@@ -33,9 +39,10 @@ class Meetings extends React.Component {
         if (!rooms.includes(m.ROOM)) { rooms.push(m.ROOM); }
         meetings.push(this.format(m));
       });
-      this.setState({rooms: rooms});
-      this.setState({meetings: meetings});
-      this.setState({filteredMeetings: meetings});// Initialize
+      this.setState({rooms});
+      this.setState({meetings});
+      this.setState({mFiltered: meetings});// Initialize
+      M.Dropdown.init(d.querySelectorAll('#area-meetings .dropdown-trigger'));
     });
 
     // Receive update through websocket
@@ -57,15 +64,13 @@ class Meetings extends React.Component {
         return 0;
       });
       console.log(meetings)
-      this.setState({meetings: meetings});
-      this.setState({
-        filteredMeetings: this.fileterMeeting(this.state.periodFilter, this.state.roomFilter)
-      });
-      M.AutoInit();
+      this.setState({meetings});
+      this.setState({ mFiltered: this.mFiltering(this.state.fPeriod, this.state.fRoom) });
+      M.Dropdown.init(d.querySelectorAll('#area-meetings .dropdown-trigger'));
     });
   }
 
-  fileterMeeting(period, room) {
+  mFiltering(period, room) {
     return this.state.meetings.filter((m) => {
       let now = new Date();
       let to = new Date().setDate(now.getDate()+Number(period));
@@ -84,56 +89,40 @@ class Meetings extends React.Component {
   }
 
   handlePeriodFiler(e) {
-    this.setState({
-      periodFilter: e.target.value,
-      filteredMeetings: this.fileterMeeting(e.target.value, this.state.roomFilter)
-    });
+    this.setState({fPeriod: e.target.value, mFiltered: this.mFiltering(e.target.value, this.state.fRoom)});
   }
 
   handleRoomFiler(e) {
-    this.setState({
-      roomFilter: e.target.value,
-      filteredMeetings: this.fileterMeeting(this.state.periodFilter, e.target.value)
-    });
+    this.setState({fRoom: e.target.value, mFiltered: this.mFiltering(this.state.fPeriod, e.target.value)});
   }
 
   handleModalClick(e) {
     const id = e.target.attributes[1].nodeValue;
     const selected = this.state.meetings.filter((m) => { return m.ID == id ? true : false; });
-    const d = document;
+    let values = {};
     let now = new Date();
-    d.querySelector('#modal-meeting [name="date"]').value = selected.length == 0 ? DateFormat(now, "yyyy-mm-dd") : DateFormat(selected[0].START_DT, "yyyy-mm-dd");
-    d.querySelector('#modal-meeting [name="start"]').value = selected.length == 0 ? DateFormat(now, "HH:MM") : DateFormat(selected[0].START_DT, "HH:MM");
-    d.querySelector('#modal-meeting [name="end"]').value = selected.length == 0 ? DateFormat(now.setHours(now.getHours()+1), "HH:MM") : DateFormat(selected[0].END_DT, "HH:MM");
-    d.querySelector('#modal-meeting [name="room"]').value = selected.length == 0 ? "" : selected[0].ROOM;
-    d.querySelector('#modal-meeting [name="info"]').value = selected.length == 0 ? "" : selected[0].INFO;
-    d.querySelector('#modal-meeting [name="any"]').checked = selected.length == 0 ? false : selected[0].any;
-    d.querySelector('#modal-meeting [type="submit"]').value = selected.length == 0 ? "" : id;
+    values.ID = id == 'new' ? "" : id;
+    values.date = selected.length == 0 ? DateFormat(now, "yyyy-mm-dd") : DateFormat(selected[0].START_DT, "yyyy-mm-dd");
+    values.start = selected.length == 0 ? DateFormat(now, "HH:MM") : DateFormat(selected[0].START_DT, "HH:MM");
+    values.end = selected.length == 0 ? DateFormat(now.setHours(now.getHours()+1), "HH:MM") : DateFormat(selected[0].END_DT, "HH:MM");
+    values.INFO = selected.length == 0 ? "" : selected[0].INFO;
+    values.ROOM = selected.length == 0 ? "" : selected[0].ROOM;
+    this.setState({values});
+
+    d.querySelector('#modal-meeting .select-dropdown').value = selected.length == 0 ? "" : selected[0].ROOM;
+    d.querySelector('#modal-meeting [name="any"]').checked = selected.length == 0 ? true : selected[0].ANY == 'true' ? true : false;
   }
 
   handleDelete(e) {
-    const url = '/api/meeting/' + e.target.value;
-    U.fetchDelete(url).then((data) => {
+    U.fetchDelete(`/api/meeting/${e.target.value}`).then((data) => {
       M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
     });
   }
 
   format(m) {
-    let start = new Date(m.START_DT);
-    let end = new Date(m.END_DT);
-    m.date = DateFormat(start, "mm/dd");
-    m.period = DateFormat(start, "HH:MM") + "-" + DateFormat(end, "HH:MM");
+    m.date = DateFormat(new Date(m.START_DT), "mm/dd");
+    m.period = DateFormat(new Date(m.START_DT), "HH:MM") + "-" + DateFormat(new Date(m.END_DT), "HH:MM");
     m.person = m.MAIL.substring(0,m.MAIL.indexOf("@")); 
-    if (m.ANY == 'true') { 
-      m.any = true;
-      m.disabledCls = false;
-    } else if (localStorage.getItem(lsKey) && m.MAIL == localStorage.getItem(lsKey)) {
-      m.any = false;
-      m.disabledCls = false;
-    } else {
-      m.any = false;
-      m.disabledCls = true;
-    }
     return m;
   }
 
@@ -151,7 +140,7 @@ class Meetings extends React.Component {
 
               <div className="col s6 m4">
                 <div className="input-field col s12">
-                  <select defaultValue={this.state.periodFilter} onChange={this.handlePeriodFiler}>
+                  <select defaultValue={this.state.fPeriod} onChange={this.handlePeriodFiler}>
                     <option value="all">All</option>
                     <option value="1">1day</option>
                     <option value="7">7day</option>
@@ -163,7 +152,7 @@ class Meetings extends React.Component {
 
               <div className="col s6 m4">
                 <div className="input-field col s12">
-                  <select defaultValue={this.state.roomFilter} onChange={this.handleRoomFiler}>
+                  <select defaultValue={this.state.fRoom} onChange={this.handleRoomFiler}>
                     <option value="all">All</option>
                       {this.state.rooms.map((item, i) =>
                         <option key={i} value={item}>{item}</option>
@@ -187,7 +176,7 @@ class Meetings extends React.Component {
                     </tr>
                   </thead>
                   <tbody>
-                    {this.state.filteredMeetings.map((m) =>
+                    {this.state.mFiltered.map((m) =>
                       <tr key={m.START_DT + "-" + m.ROOM}>
                         <td>{m.date}</td>
                         <td>{m.period}</td>
@@ -195,12 +184,12 @@ class Meetings extends React.Component {
                         <td>{m.person}</td>
                         <td>{m.INFO}</td>
                         <td className="center-align">
-                          <button onClick={this.handleModalClick} className={m.disabledCls==true ? "btn-floating btn-small grey disabled" : "modal-trigger btn-floating btn-small grey"}  href="#modal-meeting">
+                          <button onClick={this.handleModalClick} className={m.ANY=='true' || m.MAIL==this.props.usr.mail ? "modal-trigger btn-floating btn-small btn-flat grey" : "btn-floating btn-small btn-flat grey disabled"}  href="#modal-meeting">
                             <i className="material-icons" value={m.ID}>edit</i>
                           </button>
                         </td>
                         <td className="center-align">
-                          <button className={m.disabledCls==true ? "btn-floating btn-small grey disabled" : "dropdown-trigger btn-floating btn-small grey"} data-target={"m-delete-" + m.ID}>
+                          <button className={m.ANY=='true' || m.MAIL==this.props.usr.mail ? "dropdown-trigger btn-floating btn-small btn-flat grey" : "btn-floating btn-small btn-flat grey disabled"} data-target={"m-delete-" + m.ID}>
                             <i className="material-icons">delete</i>
                           </button>
                           <div id={"m-delete-" + m.ID} className='dropdown-content'>
@@ -221,7 +210,7 @@ class Meetings extends React.Component {
             </div>
           </div>
         </div>
-        <ModalMeeting meetings={this.state.meetings} rooms={this.state.rooms}/>
+        <ModalMeeting usr={this.props.usr} meetings={this.state.meetings} rooms={this.state.rooms} values={this.state.values}/>
       </div>
     );
   }

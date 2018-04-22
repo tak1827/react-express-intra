@@ -206,8 +206,17 @@ input[type=email]:not(.browser-default):focus:not([readonly])+ label,
   padding: 1em;
 }
 
-#area-links .collapsible-body a {
-  margin-bottom: 5px;
+#area-links .collapsible-body .modal-trigger {
+  margin-bottom: 7px;
+}
+
+#area-links .collapsible-body a.btn-floating {
+  width: 24px;
+  height: 24px;
+}
+
+#area-links .collapsible-body a.btn-floating i {
+  line-height: 24px;
 }
 
 @media screen and (max-width: 992px) {

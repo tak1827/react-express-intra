@@ -2,82 +2,87 @@ import React from 'react';
 import U from './../../util.js';
 import DateFormat from 'dateformat';
 
-const lsKey = 'usr';
+const d = document;
 
 class ModalMeeting extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      creatBtnCls: "modal-action modal-close btn-flat disabled",
       startValCls: "validate",
       endValCls: "validate",
+      values: {
+        ID: "",
+        date: "",
+        start: "",
+        end: "",
+        INFO: "",
+        ROOM: ""
+      }
     }
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  handleChange(e) {
-    let btnCls = this.state.creatBtnCls;
-    const date = document.querySelector('#modal-meeting [name="date"]').value;
-    const start = document.querySelector('#modal-meeting [name="start"]').value;
-    const end = document.querySelector('#modal-meeting [name="end"]').value;
-    const room = document.querySelector('#modal-meeting [name="room"]').value;
-    if (date != "" && start != "" && end != "") {
-      const s = new Date(date + " " + start);
-      const e = new Date(date + " " + end);
-      if (s >= e) {
-        this.setState({startValCls: "invalid"});
-        if (!btnCls.includes("disabled")) { this.setState({creatBtnCls: btnCls + "disabled"}); }
-        return;
+  componentDidMount (e) {
+    // Set selected values
+    M.Modal.init(d.querySelector('#modal-meeting.modal'), {
+      'onOpenEnd' : () =>  { 
+        this.setState({values: this.props.values});
+        this.checkVal(this.state.values);
       }
-      this.setState({startValCls: "valid"});
+    });
+  }
+
+  handleChange(e) {
+    let values = this.state.values;
+    if (e.target.name == 'date') { values.date = e.target.value;} 
+    else if (e.target.name == 'start') { values.start = e.target.value; } 
+    else if (e.target.name == 'end') { values.end = e.target.value; } 
+    else if (e.target.name == 'room') { values.ROOM = e.target.value; } 
+    else if (e.target.name == 'info') { values.INFO = e.target.value; }
+    this.setState({values: this.props.values});
+    this.checkVal(values);
+  }
+
+  checkVal(values) {
+    const room = values.ROOM;
+    const st = new Date(values.date + " " + values.start);
+    const ed = new Date(values.date + " " + values.end);
+    if (st >= ed) {
+      this.setState({startValCls: "invalid"});
+      return;
     }
-    if (date != "" && start != "" && end != "" && room != "") {
-      const s = new Date(date + " " + start);
-      const e = new Date(date + " " + end);
+    this.setState({startValCls: "valid"});
+    if (room != "") {
       let isStartValid = true;
       let isEndValid = true;
       this.props.meetings.forEach((m) => {
-        if (room == m.ROOM && s >= new Date(m.START_DT) && s <= new Date(m.END_DT)) {
-          isStartValid = false;
-          this.setState({startValCls: "invalid"}); 
-        }
-        if (room == m.ROOM && e >= new Date(m.START_DT) && e <= new Date(m.END_DT)) {
-          isEndValid = false;
-          this.setState({endValCls: "invalid"});
-        }
-        if (room == m.ROOM && s <= new Date(m.START_DT) && e >= new Date(m.END_DT)) {
-          isEndValid = false;
-          this.setState({endValCls: "invalid"});
+        if (values.ID == m.ID) { return; }
+        if (room == m.ROOM) {
+          if (st >= new Date(m.START_DT) && st <= new Date(m.END_DT)) { isStartValid = false; }
+          if (ed >= new Date(m.START_DT) && ed <= new Date(m.END_DT)) { isEndValid = false; }
+          if (st <= new Date(m.START_DT) && ed >= new Date(m.END_DT)) { isEndValid = false; }
         }
       });
-      if (isStartValid) { this.setState({startValCls: "valid"}); }
+      if (isStartValid) {this.setState({startValCls: "valid"}); }
+      else {this.setState({startValCls: "invalid"}); }
       if (isEndValid) { this.setState({endValCls: "valid"}); }
-      if (isStartValid && isEndValid) {
-        this.setState({creatBtnCls: btnCls.replace("disabled","")});
-        return;
-      }
+      else { this.setState({endValCls: "invalid"}); }
     }
-    if (!btnCls.includes("disabled")) { this.setState({creatBtnCls: btnCls + "disabled"}); }
   }
 
   handleSubmit(e) {
-    const d = document;
-    const id = d.querySelector('#modal-meeting [type="submit"]').value;
-    let date = d.querySelector('#modal-meeting [name="date"]').value;
-    let start = d.querySelector('#modal-meeting [name="start"]').value;
-    let end = d.querySelector('#modal-meeting [name="end"]').value;
-    start = new Date(date + " " + start);
-    end = new Date(date + " " + end);
-    const room = d.querySelector('#modal-meeting [name="room"]').value;
-    const mail = localStorage.getItem(lsKey);
-    const info = d.querySelector('#modal-meeting [name="info"]').value;
-    const any = d.querySelector('#modal-meeting [name="any"]').checked ? "true" : "false";
-    const method = id == "" ? "post" : "put";
-    const body = {ID: id, START_DT: start, END_DT: end, ROOM: room, MAIL: mail, INFO: info, ANY: any};
-    const url = '/api/meeting';
-    console.log(body)
-    U.fetchPostPut(method, url, body).then((data) => {
+    const values = this.state.values;
+    let body = {};
+    body.ID = values.ID;
+    body.START_DT = new Date(`${values.date} ${values.start}`);
+    body.END_DT = new Date(`${values.date} ${values.end}`);
+    body.ROOM = d.querySelector('#modal-meeting [name="room"]').value;
+    body.MAIL = this.props.usr.mail;
+    body.INFO = values.INFO;
+    body.ANY = d.querySelector('#modal-meeting [name="any"]').checked ? "true" : "false";
+    const method = body.ID == "" ? "post" : "put";
+    U.fetchPostPut(method, '/api/meeting', body).then((data) => {
       M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
     });
     e.preventDefault();
@@ -91,7 +96,7 @@ class ModalMeeting extends React.Component {
         <form className="col s12" onSubmit={this.handleSubmit}>
           <div className="row">
             <div className="input-field col s4">
-              <input type="date" name="date" onChange={this.handleChange}/>
+              <input type="date" name="date" value={this.state.values.date} onChange={this.handleChange}/>
               <label>Date</label>
               <span className="helper-text" data-error="Empty" data-success="">Required</span>
             </div>
@@ -99,7 +104,7 @@ class ModalMeeting extends React.Component {
               <p className="center-align">:</p>
             </div>
             <div className="input-field col s3">
-              <input className={this.state.startValCls} type="time" name="start" onChange={this.handleChange}/>
+              <input className={this.state.startValCls} type="time" name="start" value={this.state.values.start} onChange={this.handleChange}/>
               <label>Start</label>
               <span className="helper-text" data-error="Invalid" data-success="">Required</span>
             </div>
@@ -107,12 +112,12 @@ class ModalMeeting extends React.Component {
               <p className="center-align">-</p>
             </div>
             <div className="input-field col s3">
-              <input className={this.state.endValCls} type="time" name="end" onChange={this.handleChange}/>
+              <input className={this.state.endValCls} type="time" name="end" value={this.state.values.end} onChange={this.handleChange}/>
               <label>End</label>
               <span className="helper-text" data-error="Invalid" data-success="">Required</span>
             </div>
             <div className="input-field col s6">
-              <select defaultValue="" name="room" onChange={this.handleChange}>
+              <select name="room" onChange={this.handleChange}>
                 <option value=""></option>
                 {this.props.rooms.map((item, i) =>
                   <option key={i} value={item}>{item}</option>
@@ -122,8 +127,8 @@ class ModalMeeting extends React.Component {
               <span className="helper-text" data-error="Empty" data-success="">Required</span>
             </div>
             <div className="input-field col s12">
-              <input type="text" name="info"/>
-              <label htmlFor="info">Enter Info</label>
+              <input type="text" name="info" value={this.state.values.INFO} onChange={this.handleChange}/>
+              <label htmlFor="info" className={this.state.values.INFO=="" ? "" : "active"}>Enter Info</label>
             </div>
             <div className="input-field col s12">
               <p>
@@ -136,7 +141,7 @@ class ModalMeeting extends React.Component {
           </div>
           <div className="row right-align">
             <button type="button" className="modal-action modal-close btn-flat">Cancel</button>
-            <button type="submit" className={this.state.creatBtnCls}>Submit</button>
+            <button type="submit" className={this.state.startValCls!="valid" || this.state.endValCls!="valid" || this.state.values.ROOM=="" ? "modal-action modal-close btn-flat disabled" : "modal-action modal-close btn-flat"}>Submit</button>
           </div>
         </form>
       </div>

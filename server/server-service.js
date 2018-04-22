@@ -18,7 +18,8 @@ exports.login = (params) => {
         .on('data', (data) => {
           if (data.MAIL == params.mail && data.PASSWORD == params.pass) {
             stream.pause();
-            return res({isUsr: true, isPass: true});
+            const isAdmin = data.ADMIN=='true' ? true : false;
+            return res({isUsr: true, isPass: true, isAdmin: isAdmin, usr: data});
           } else if (data.MAIL == params.mail) {
             stream.pause();
             return res({isUsr: true, isPass: false});
@@ -188,6 +189,57 @@ exports.updateMeeting = (params) => {
   return new Promise(res => {
     const csvPath = path.resolve(__dirname, config.env.csvMeetings);
     const csvPathBk = path.resolve(__dirname, config.env.csvMeetingsBk + dateFormat(new Date(), "-yymmddHHMMss") + ".csv");
+    U.updateCsv(csvPath, csvPathBk, params).then(data => res(data)).catch(err => rej(err));
+  });
+}
+
+/****************************************
+ Get all users
+****************************************/
+exports.getAllUsrs = (params) => {
+  return new Promise(res => {
+      const csvPath = path.resolve(__dirname, config.env.csvUsrs);
+      U.readCsv(csvPath).then(stream => {
+        let usrs = [];
+        stream
+          .pipe(csv())
+          .on('data', (data) => { usrs.push(data); })
+          .on('end', () => { return res(U.sortByName(usrs,"MAIL")); });
+      });
+  });
+}
+
+/****************************************
+ Insert user
+****************************************/
+exports.insertUsr = (params) => {
+  return new Promise((res, rej) => {
+    params.ID = (new Date()).getTime() + "";
+    const row = U.convetJsonToRow(params) + '\n';
+    const csvPath = path.resolve(__dirname, config.env.csvUsrs);
+    U.insertCsv(csvPath, row).then(data => res(params)).catch(err => rej(err));
+  });
+}
+
+/****************************************
+ Delete news
+****************************************/
+exports.deleteUsr = (params) => {
+  return new Promise(res => {
+    const id = params.id;
+    const csvPath = path.resolve(__dirname, config.env.csvUsrs);
+    const csvPathBk = path.resolve(__dirname, config.env.csvUsrsBk + dateFormat(new Date(), "-yymmddHHMMss") + ".csv");
+    U.deleteCsv(csvPath, csvPathBk, id).then(data => res(data)).catch(err => rej(err));
+  });
+}
+
+/****************************************
+ Update news
+****************************************/
+exports.updateUsr = (params) => {
+  return new Promise(res => {
+    const csvPath = path.resolve(__dirname, config.env.csvUsrs);
+    const csvPathBk = path.resolve(__dirname, `${config.env.csvUsrsBk}${dateFormat(new Date(), "-yymmddHHMMss")}.csv`);
     U.updateCsv(csvPath, csvPathBk, params).then(data => res(data)).catch(err => rej(err));
   });
 }

@@ -3,6 +3,7 @@ import ModalNews from './modal/ModalNews.js';
 import U from './../util.js';
 
 const defaultMaxNews = 4;
+const d = document;
 
 class News extends React.Component {
 	constructor(props) {
@@ -10,22 +11,28 @@ class News extends React.Component {
     this.state = {
       news: [],
       maxNews: defaultMaxNews,
+      values: {
+      	ID: "",
+      	DATE: "",
+        TITLE: "",
+        CONTENT: "",
+        IMPORTANT: "false"
+      }
     }
     this.handleClick = this.handleClick.bind(this);
     this.handleDelete = this.handleDelete.bind(this);
-    this.format = this.format.bind(this);
     this.handleModalClick = this.handleModalClick.bind(this);
   }
 
 	componentDidMount () {
+		M.Collapsible.init(d.querySelectorAll('#area-news .collapsible'));
+
 		// Get all news
-		const url = '/api/news';
-    U.fetchGet(url).then((data) => {
+    U.fetchGet('/api/news').then((data) => {
     	let nFormed = [];
-			data.news.forEach((n) => {
-			  nFormed.push(this.format(n));
-			});
+			data.news.forEach((n) => { nFormed.push(this.format(n)); });
       this.setState({news: nFormed});
+      M.Dropdown.init(d.querySelectorAll('#area-news .dropdown-trigger'));
     });
 
     // Receive update through websocket
@@ -41,23 +48,22 @@ class News extends React.Component {
     		data.news = this.format(data.news);
     		news = news.map((n) => { return n.ID == data.news.ID ? data.news : n });
     	}
-    	this.setState({news: news});
-    	M.AutoInit();
+    	this.setState({news});
+    	M.Dropdown.init(d.querySelectorAll('#area-news .dropdown-trigger'));
     });
   }
 
   handleClick(e) {
-  	e.preventDefault();
-  	if (this.state.maxNews == this.state.news.length) {
-  		this.setState({maxNews: defaultMaxNews});	
-  		return;
+  	if (this.state.maxNews == this.state.news.length) { this.setState({maxNews: defaultMaxNews});} 
+  	else { this.setState({maxNews: this.state.news.length}); }
+  	function inner() {
+  		M.Dropdown.init(d.querySelectorAll('#area-news .dropdown-trigger'));	
   	}
-  	this.setState({maxNews: this.state.news.length});  	
+  	setTimeout(inner, 100);
   }
 
   handleDelete(e) {
-  	const url = '/api/news/' + e.target.value;
-    U.fetchDelete(url).then((data) => {
+    U.fetchDelete(`/api/news/${e.target.value}`).then((data) => {
       M.toast({html: U.createToastHtml("Success!", "success"), displayLength: 1000});
     }); 	
   }
@@ -65,12 +71,16 @@ class News extends React.Component {
   handleModalClick(e) {
   	// console.log(e.target.attributes);
   	const id = e.target.attributes[1].nodeValue;
-  	const d = document;
-  	d.querySelector('#modal-news [name="date"]').value = id == 'new' ? new Date() : new Date(d.querySelector('#n-'+id+' .date').innerHTML);
-  	d.querySelector('#modal-news [name="title"]').value = id == 'new' ? "" : d.querySelector('#n-'+id+' .title').innerHTML;
-    d.querySelector('#modal-news [name="content"]').value = id == 'new' ? "" :  d.querySelector('#n-'+id+' .content').innerHTML;
-    d.querySelector('#modal-news [name="important"]').checked = id == 'new' ? false : d.querySelector('#n-'+id+'  .important') ? true : false;
-    d.querySelector('#modal-news [type="submit"]').value = id == 'new' ? "" : id;
+  	const selected = this.state.news.filter((m) => { return m.ID == id ? true : false; });
+    let values = {};
+    values.ID = id == 'new' ? "" : id;
+    values.DATE = id == 'new' ? new Date() : new Date(selected[0].DATE);
+    values.TITLE = id == 'new' ? "" : selected[0].TITLE;
+    values.CONTENT = id == 'new' ? "" : selected[0].CONTENT;
+    values.IMPORTANT = id == 'new' ? "false" : selected[0].IMPORTANT;
+    this.setState({values});
+
+    d.querySelector('#modal-news [name="important"]').checked = id == 'new' ? false : selected[0].IMPORTANT=="true" ? true : false;
   }
 
   format(n) {
@@ -87,7 +97,12 @@ class News extends React.Component {
 	          <img src="images/mailbox.png"/>
 	          <span className="card-title">News</span>
 	        </div>
-	        <button onClick={this.handleModalClick} className="btn-floating halfway-fab waves-effect waves-light indigo modal-trigger" href="#modal-news"><i className="material-icons" value="new">add</i></button>
+          {this.props.usr.admin=='true' ? (
+            <button onClick={this.handleModalClick} className="btn-floating halfway-fab waves-effect waves-light indigo modal-trigger" href="#modal-news"><i className="material-icons" value="new">add</i>
+            </button>
+          ):(
+            <div/>
+          )}
 	        <div className="card-content">
 
 	          <ul className="collapsible z-depth-0">
@@ -106,10 +121,11 @@ class News extends React.Component {
 									  	)}
 								  	</div>
 								  </div>
-								  <div className="collapsible-body grey lighten-5">
-								  	<span className="content">{n.CONTENT}</span>
-								  	<br/><br/>
+                  <div className="collapsible-body grey lighten-5">
+                  <span className="content">{n.CONTENT}</span>
+                  {this.props.usr.admin=='true' ? (	
 								  	<div className="right-align">
+                      <br/><br/>
 									  	<button onClick={this.handleModalClick} className='modal-trigger btn-floating btn-flat btn-small grey center-align' href="#modal-news">
 										  	<i className="material-icons" value={n.ID}>edit</i>
 										  </button>
@@ -123,9 +139,12 @@ class News extends React.Component {
 	                        <li><a>No</a></li>
 	                        <li><button value={n.ID} className="btn-flat" onClick={this.handleDelete}>Yes</button></li>
 	                      </ul>
-	                     </div>
+	                    </div>
                     </div>
-								  </div>
+                  ):(
+                    <div/>
+                  )}
+                  </div>
 							  </li>
 							).slice(0, this.state.maxNews)}
 	          </ul>
@@ -143,7 +162,7 @@ class News extends React.Component {
 	        </div>
 	      </div>
 
-	      <ModalNews/>
+	      <ModalNews values={this.state.values}/>
 	      
 	    </div>
     );

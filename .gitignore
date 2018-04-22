@@ -28,3 +28,4 @@ memo.txt
 package-lock.json
 access-log/
 public/
+db/backup

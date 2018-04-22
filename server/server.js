@@ -33,6 +33,7 @@ if (process.env.NODE_ENV != 'production') {
   app.use(logger);  
 }
 
+
 /****************************************
  Access log 
 ****************************************/
@@ -55,6 +56,16 @@ app.use(session({
   // expires: "",
   maxAge: process.env.NODE_ENV=='production' ? config.app.prodMaxAge : config.app.devMaxAge,
 }));
+const requireAdmin = (req, res, next) => {
+  if (req.session.admin) { return next(); }
+  return res.status(403).send("No be Admin!");
+}
+/* Admin check */
+app.get('/isAdmin', requireAdmin, (req, res, next) => {
+  res.send("Is admin!");
+});
+
+
 
 /****************************************
  Websocket
@@ -75,7 +86,7 @@ const WS = io
 /* Login */
 app.get('/login', (req, res, next) => {
   try {
-    req.session && req.session.usr ? res.redirect('/intra') : res.sendFile(APP_DIR + 'index.html');    
+    req.session && req.session.usr ? res.redirect('/intra') : res.sendFile(INDEX_FILE);    
   } catch(err) { next(err); }
 });
 
@@ -84,20 +95,24 @@ app.post('/login', async (req, res, next) => {
     if (!req.body.mail || !req.body.pass) { res.redirect('/login'); }
     const result = await Service.login(req.body);
     if (result.isPass) {
-      debug("login success!");
-      req.session.usr = req.body.mail;
-      res.redirect('/intra?mail=' + req.body.mail);
-    } else if (result.isUsr) {
-      res.redirect('/login?mail=' + req.body.mail + '&pass=' + req.body.pass + '&isUsr=true');
-    } else {
-      res.redirect('/login?mail=' + req.body.mail + '&pass=' + req.body.pass + '&isUsr=false');
+      req.session.usr = result.usr.MAIL;
+      if (result.isAdmin) { req.session.admin = result.usr.PASSWORD; }
+      res.redirect(`/intra?mail=${result.usr.MAIL}&isAdmin=${result.isAdmin}`);
     }
+    else { res.redirect(`/login?mail=${req.body.mail}&pass=${req.body.pass}&isUsr=${result.isUsr}`); }
   } catch(err) { next(err); }
 });
 
 app.get('/intra', (req, res, next) => {
   try {
-    req.session && req.session.usr ? res.sendFile(INDEX_FILE) : res.redirect('/login');
+    if (!req.session || !req.session.usr) { res.redirect('/login'); }
+    if (req.query.mail != req.session.usr || 
+       (req.query.isAdmin == "false" && req.session.admin) ||
+        (req.query.isAdmin == "true" && !req.session.admin)) {
+      if (req.session.admin) { res.redirect(`/intra?mail=${req.session.usr}&isAdmin=true`); };
+      res.redirect(`/intra?mail=${req.session.usr}&isAdmin=false`);
+    }
+    res.sendFile(INDEX_FILE);
   } catch(err) { next(err); }
 });
 
@@ -109,7 +124,7 @@ app.get('/api/news', async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-app.post('/api/news', async (req, res, next) => {
+app.post('/api/news', requireAdmin, async (req, res, next) => {
   try {
     const news  = await Service.insertNews(req.body);
     res.json({ result: "succeed", news: news });
@@ -117,7 +132,7 @@ app.post('/api/news', async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-app.delete('/api/news/:id', async (req, res, next) => {
+app.delete('/api/news/:id', requireAdmin, async (req, res, next) => {
   try {
     await Service.deleteNews(req.params);
     res.json({ result: "succeed", news: req.params.id});
@@ -125,7 +140,7 @@ app.delete('/api/news/:id', async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-app.put('/api/news', async (req, res, next) => {
+app.put('/api/news', requireAdmin, async (req, res, next) => {
   try {
     const news = await Service.updateNews(req.body);
     res.json({ result: "succeed", news: news });
@@ -141,7 +156,7 @@ app.get('/api/links', async (req, res, next) => {
   } catch(err) { next(err); } 
 });
 
-app.post('/api/link', async (req, res, next) => {
+app.post('/api/link', requireAdmin, async (req, res, next) => {
   try {
     const link = await Service.insertLink(req.body);
     res.json({ result: "succeed", link: link });
@@ -149,7 +164,7 @@ app.post('/api/link', async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-app.delete('/api/link/:id', async (req, res, next) => {
+app.delete('/api/link/:id', requireAdmin, async (req, res, next) => {
   try {
     await Service.deleteLink(req.params);
     res.json({ result: "succeed", link: req.params.id});
@@ -157,7 +172,7 @@ app.delete('/api/link/:id', async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-app.put('/api/link', async (req, res, next) => {
+app.put('/api/link', requireAdmin, async (req, res, next) => {
   try {
     const link = await Service.updateLink(req.body);
     res.json({ result: "succeed", link: link });
@@ -197,20 +212,55 @@ app.put('/api/meeting', async (req, res, next) => {
   } catch(err) { next(err); }
 });
 
-// Static files
-app.use(express.static(APP_DIR));
-
-app.get('*', (req, res, next) => {
+app.get('/', (req, res, next) => {
   try { res.redirect('/login'); } 
   catch(err) { next(err); }
 });
+
+/* Users */
+app.get('/api/users', requireAdmin, async (req, res, next) => {
+  try {
+    debug("path")
+    const usrs = await Service.getAllUsrs(req.body);
+    usrs.length != 0 ? res.json({ usrs }) : res.status(404).send("Sorry can't find news!");
+  } catch(err) { next(err); }
+});
+
+app.post('/api/user', requireAdmin, async (req, res, next) => {
+  try {
+    const usr  = await Service.insertUsr(req.body);
+    res.json({ result: "succeed", usr });
+    WS.emit('users', { type: "new", usr });
+  } catch(err) { next(err); }
+});
+
+app.delete('/api/user/:id', requireAdmin, async (req, res, next) => {
+  try {
+    await Service.deleteUsr(req.params);
+    res.json({ result: "succeed", usr: req.params.id});
+    WS.emit('users', { type: "delete", id: req.params.id });
+  } catch(err) { next(err); }
+});
+
+app.put('/api/user', requireAdmin, async (req, res, next) => {
+  try {
+    const usr = await Service.updateUsr(req.body);
+    res.json({ result: "succeed", usr });
+    WS.emit('users', { type: "update", usr });
+  } catch(err) { next(err); }
+});
+
+// Static files
+app.use(express.static(APP_DIR));
+
+
 
 /****************************************
  Handle error
 ****************************************/
 app.use(function (err, req, res, next) {
   debug(err.message);
-  res.status(500).send('500: Something broke on Server!');
+  res.status(500).send(err.message);
 });
 
 
