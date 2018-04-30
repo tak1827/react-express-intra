@@ -2,9 +2,6 @@ const config = require('./../config');
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
-const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
 const session = require('cookie-session')
 const bodyParser = require('body-parser');// Requset parse to json
 const debug = require('debug')('dev-svr'); // Debug logger
@@ -15,6 +12,18 @@ const Service = require('./server-service');
 const PORT = process.env.NODE_ENV=='production' ? config.app.prodPort : config.app.devPort;
 const APP_DIR =  process.env.NODE_ENV=='production' ? __dirname + './../public' : __dirname + './../build';
 const INDEX_FILE = path.resolve(APP_DIR, 'index.html');
+
+/****************************************
+ Server setting
+****************************************/
+const options = {
+  key: fs.readFileSync(__dirname + '/key/private.key'),
+  cert: fs.readFileSync(__dirname + '/key/certificate.pem')
+};
+const app = express();
+const server = require('https').Server(options, app);
+// const server = process.env.NODE_ENV == 'production' ? require('https').Server(options, app) : require('http').Server(app);
+const io = require('socket.io')(server);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -32,7 +41,6 @@ const logger = (req, res, next) => {
 if (process.env.NODE_ENV != 'production') {
   app.use(logger);  
 }
-
 
 /****************************************
  Access log 
@@ -64,8 +72,6 @@ const requireAdmin = (req, res, next) => {
 app.get('/isAdmin', requireAdmin, (req, res, next) => {
   res.send("Is admin!");
 });
-
-
 
 /****************************************
  Websocket
@@ -253,63 +259,15 @@ app.put('/api/user', requireAdmin, async (req, res, next) => {
 // Static files
 app.use(express.static(APP_DIR));
 
-
-
 /****************************************
  Handle error
 ****************************************/
 app.use(function (err, req, res, next) {
   debug(err.message);
-  res.status(500).send(err.message);
+  // res.status(500).send(err.message);
 });
 
-
-http.listen(PORT, () => {
-  console.log('Server listening on port ' + PORT);
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
-
-// app.get('/login/:mail--:pass', async (req, res) => {
-//   // debug(req.params)
-//   const isUsr = await Service.login(req.params);
-//   if (isUsr) {
-//     debug("success!")
-//     res.redirect('/intra');
-//   } else {
-//     res.redirect('/login');
-//   }
-// });
-
-// app.get('/', function (req, res, next) {
-//   // do some sync stuff
-//   queryDb()
-//     .then(function (data) {
-//       // handle data
-//       return makeCsv(data)
-//     })
-//     .then(function (csv) {
-//       // handle csv
-//     })
-//     .catch(next)
-// })
-
-
-// app.post('/features/sift', requiresImgBase64, (req, res) => {
-//   const siftImg = services.detectKeyPointsSIFT(req.params.img);
-//   const siftImgBase64 = services.encodeJpgBase64(siftImg);
-//   res.status(202).send({ base64Data: siftImgBase64 });
-// });
-
-
-// function requiresLogin(req, res, next) {
-//   if (req.session && req.session.usrId) {
-//     return next();
-//   } else {
-//     var err = new Error('You must be logged in to view this page.');
-//     err.status = 401;
-//     return next(err);
-//   }
-// }
-// router.get('/profile', mid.requiresLogin, function(req, res, next) {
-//   //...
-// });
 
